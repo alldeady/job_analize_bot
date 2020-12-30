@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  postgresql:
+    image: postgres
+    volumes:
+      - "db:/var/lib/postgresql/data"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: hh_bot
+    ports:
+      - "5432:5432"
+volumes:
+  db:
