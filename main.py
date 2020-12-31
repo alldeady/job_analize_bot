@@ -27,7 +27,6 @@ def help(message):
         'Для работы следующих команд вакансия должна находиться в базе данных\n\n' +\
         'Средняя зарплата: _зп(zp) <название вакансии>_\n' +\
         'Скачать таблицу в csv: _скачать(с, d) <название вакансии>_\n' +\
-        'Sql запрос к базе данных(скачивает csv таблицу после выполнения): _sql <текст запроса>_\n' +\
         'Показать вакансии: показать(п, p) _<название вакансии>_\n' +\
         '\nP.S.: Пока что ищу только в default city\n' +\
         'P.S.s.: Ожидаю добавление поддержки заданий от фиксеров\n'
@@ -41,26 +40,20 @@ def bd_names(message):
 @bot.message_handler(content_types=['text'])
 def parser(message):
     msg = message.text.lower().split()
+    vacancy = ' '.join(msg[1:])
 
     if msg[0] == 'вакансия' or msg[0] == 'v' or msg[0] == 'в':
         try:
             bot.send_message(message.chat.id, 'Это может занять некторое время')
-            vacancy = ' '.join(msg[1:])
             init.getData(vacancy, message.chat.id, bot)
             bot.send_message(message.chat.id, 'Данные по вакансии доступны к анализу')
         except Exception as e:
             bot.send_message(message.chat.id, 'Что-то пошло не так :с')
             bot.send_message(message.chat.id, f'{e}')
 
-    elif msg[0] == 'зп' or msg[0] == 'zp':
-        vacancy = ' '.join(msg[1:])
-        res = analize.averageSalary(vacancy)
-        bot.send_message(message.chat.id, f'{res[0]} - средняя зарплата вакансии {vacancy}\nИз {res[2]} вакансий зарплата указана только в {res[1]}')
-
     elif msg[0] == 'sql':
         try:
-            command = ' '.join(msg[1:])
-            doc_name = info.getCSV(command)
+            doc_name = info.getCSV(command=vacancy)
             doc = open(f'{doc_name}', 'rb')
             bot.send_document(message.chat.id, doc)
             doc.close()
@@ -71,8 +64,7 @@ def parser(message):
 
     elif msg[0] == 'скачать' or msg[0] == 'с' or msg[0] == 'd':
         try:
-            db_name = ' '.join(msg[1:])
-            command = f'select * from public."{db_name}"'
+            command = f'select * from public."{vacancy}"'
             doc_name = info.getCSV(command)
             doc = open(f'{doc_name}', 'rb')
             bot.send_document(message.chat.id, doc)
@@ -84,12 +76,25 @@ def parser(message):
 
     elif msg[0] == 'показать' or msg[0] == 'п' or msg[0] == 'p':
         try:
-            db_name = ' '.join(msg[1:])
-            text = info.getVacancies(db_name)
+            text = info.getVacancies(vacancy)
             bot.send_message(message.chat.id, f'{text}')
         except Exception as e:
             bot.send_message(message.chat.id, f'{e}')
 
+    elif msg[0] == 'зарплата' or msg[0] == 'zp' or msg[0] == 'зп':
+        try:
+            res = analize.averageSalary(vacancy)
+            photo = open(f'{res[0]}', 'rb')
+            bot.send_photo(message.chat.id, photo)
+            photo.close()
+
+            text = f'{res[1]} - средняя зарплата вакансии {vacancy}\n' +\
+                    f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
+            bot.send_message(message.chat.id, text)
+            if os.path.isfile(f'{res[0]}'):
+                os.remove(f'{res[0]}')
+        except Exception as e:
+            bot.send_message(message.chat.id, f'{e}')
 
     else:
         bot.send_message(message.chat.id, 'Чекни команды в /help')

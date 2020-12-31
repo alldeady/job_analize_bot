@@ -33,7 +33,7 @@ def getData(vacancy, chat_id, bot):
 
     ue = 70
 
-    for page in range(10):
+    for page in range(100):
         params = {
             'text': f'NAME:{vacancy}',
             'area': 1,
