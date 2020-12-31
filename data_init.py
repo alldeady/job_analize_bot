@@ -1,7 +1,12 @@
 import json
 import requests
 import time
+import pandas as pd
 import re
+from sqlalchemy import engine as sql
+
+def sendMessage(message, chat_id, bot):
+    bot.send_message(chat_id, f'{message}')
 
 def clearHtml(raw_html):
     mr_proper = re.compile('<.*?>')
@@ -12,10 +17,11 @@ def getMoreData(url):
     req = requests.get(url)
     data = json.loads(req.content.decode())
     req.close()
-    time.sleep(0.25)
+    time.sleep(0.2)
     return data
 
-def getData(vacancy):
+def getData(vacancy, chat_id, bot):
+    vac_id = []
     name = []
     salarys = []
     employer = []
@@ -36,6 +42,8 @@ def getData(vacancy):
         }
         req = requests.get('https://api.hh.ru/vacancies', params)
         item = json.loads(req.content.decode())
+        req.close()
+        time.sleep(0.2)
 
         for data in item['items']:
             data_vacancy = getMoreData(data['url'])
@@ -53,6 +61,7 @@ def getData(vacancy):
                 if data['salary']['currency'] != 'RUR':
                     salary *= ue
 
+            vac_id.append(data_vacancy['id'])
             name.append(data['name'])
             salarys.append(salary)
             employer.append(data['employer']['name'])
@@ -62,13 +71,17 @@ def getData(vacancy):
             key_skills.append(skills)
             description.append(clearHtml(data_vacancy['description']))
 
-        req.close()
-        if (data['pages'] - page) <= 1:
-            break
-        time.sleep(0.25)
+        num_vac = len(vac_id)
+        sendMessage(f'Вакансий собрано: {num_vac}', chat_id, bot)
 
+        if (item['pages'] - page) <= 1:
+            break
+
+    if num_vac == 0:
+        return # do raise exception
 
     df = pd.DataFrame({
+        'vac_id': vac_id,
         'request': vacancy,
         'names': name,
         'salarys': salarys,
@@ -79,6 +92,10 @@ def getData(vacancy):
         'key_skills': key_skills,
         'descriptions': description
     })
-    #print(df)
-    df.to_csv('python_developer.csv', encoding='utf-8', index=False)
-    return(df)
+
+    eng = sql.create_engine('postgresql://postgres:root@127.0.0.1:5432/hh_bot')
+    conn = eng.connect()
+
+    df.to_sql(f'{vacancy}', conn, schema='public', if_exists='replace', index=False)
+    conn.close()
+
