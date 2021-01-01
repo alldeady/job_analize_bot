@@ -93,7 +93,7 @@ def getData(vacancy, chat_id, bot):
         'descriptions': description
     })
 
-    eng = sql.create_engine('postgresql://postgres:root@127.0.0.1:5432/hh_bot')
+    eng = sql.create_engine('postgresql://postgres:root@postgres:5432/hh_bot')
     conn = eng.connect()
 
     df.to_sql(f'{vacancy}', conn, schema='public', if_exists='replace', index=False)
