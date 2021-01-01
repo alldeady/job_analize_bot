@@ -5,7 +5,7 @@ import os
 import re
 
 def getDF(command):
-    eng = sql.create_engine('postgresql://postgres:root@127.0.0.1:5432/hh_bot')
+    eng = sql.create_engine('postgresql://postgres:root@postgres:5432/hh_bot')
     conn = eng.connect()
 
     sql_req = f'{command}'
