@@ -1,18 +1,18 @@
 version: "3.3"
 services:
-  postgresql:
-    image: postgres
-    container_name: postgres
-    volumes:
-      - "db:/var/lib/postgresql/data"
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: hh_bot
-      POSTGRES_HOST: 0.0.0.0
-    ports:
-            - "5432:5432"
+  # postgresql:
+  #   image: postgres
+  #   container_name: postgres
+  #   volumes:
+  #     - "db:/var/lib/postgresql/data"
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: root
+  #     POSTGRES_DB: hh_bot
+  #     POSTGRES_HOST: 0.0.0.0
+  #   ports:
+  #     - "5432:5432"
   bot:
     container_name: hh_bot
     restart: always
