@@ -1,6 +1,4 @@
-import json
 import pandas as pd
-from sqlalchemy import engine as sql
 import matplotlib.pyplot as plt
 
 from data_info import getDF
@@ -20,6 +18,14 @@ def experienceRate(vacancy):
             count[2] += 1
         elif exp == labels[3]:
             count[3] += 1
+
+    i = 0
+    while i != len(count):
+        if count[i] == 0:
+            del count[i]
+            del labels[i]
+        else:
+            i += 1
 
     fig, ax = plt.subplots()
     ax.pie(count, labels=labels, autopct='%1.1f%%', pctdistance=0.7, wedgeprops=dict(width=0.5))
@@ -53,12 +59,28 @@ def averageSalary(vacancy):
                 summ[3] += df['salaries'][i]
                 n[3] += 1
 
-    # raise exception division by zero
+    i = 0
+    av_n = 0
+    av_summ = 0
+    while i != len(summ):
+        if summ[i] == 0:
+            del summ[i]
+            del n[i]
+            del exp[i]
+        else:
+            av_n += n[i]
+            av_summ += summ[i]
+            summ[i] //= n[i]
+            i += 1
 
-    av_n = n[0] + n[1] + n[2] + n[3]
-    av_summ = (summ[0] + summ[1] + summ[2] + summ[3]) // av_n
-    summ = [summ[0]//n[0], summ[1]//n[1], summ[2]//n[2], summ[3]//n[3]]
+    if len(summ) == 0:
+        return 'Зарпалата не указана ни в одной вакансии'
+
+    av_summ //= av_n
     res = ['graph.png', av_summ, av_n, len(df)]
+    if len(summ) == 1:
+        res[0] = 'No graph'
+        return res
 
     fig, ax = plt.subplots()
     ax.plot(exp, summ)
@@ -90,7 +112,6 @@ def headSkills(vacancy):
     fig.set_figwidth(10)
     fig.set_figheight(10)
     plt.xlabel("Упоминания")
-
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
 
     return res

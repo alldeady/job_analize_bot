@@ -24,6 +24,7 @@ def commandsKeyboard(vacancy):
                telebot.types.KeyboardButton(f'Скачать {vacancy}'))
     return markup
 
+
 @bot.message_handler(commands=['start'])
 def welcome(message):
     bot.send_message(message.chat.id, 'Привет! Смотри, что я умею /help')
@@ -107,16 +108,20 @@ def parser(message):
     elif msg[0] == 'зарплата' or msg[0] == 'зп'  or msg[0] == 'zp':
         try:
             res = analize.averageSalary(vacancy)
-            photo = open(res[0], 'rb')
-            bot.send_photo(message.chat.id, photo)
-            photo.close()
-            if os.path.isfile(res[0]):
-                os.remove(res[0])
-
-            text = f'*{res[1]}* - средняя зарплата по запросу {vacancy}\n' \
-                    f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
-            bot.send_message(message.chat.id, text,
-                             reply_markup=commandsKeyboard(vacancy))
+            if res == 'Зарпалата не указана ни в одной вакансии':
+                bot.send_message(message.chat.id, res,
+                                reply_markup=commandsKeyboard(vacancy))
+            else:
+                if res[0] != 'No graph':
+                    photo = open(res[0], 'rb')
+                    bot.send_photo(message.chat.id, photo)
+                    photo.close()
+                    if os.path.isfile(res[0]):
+                        os.remove(res[0])
+                text = f'*{res[1]}* - средняя зарплата по запросу {vacancy}\n' \
+                        f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
+                bot.send_message(message.chat.id, text,
+                                reply_markup=commandsKeyboard(vacancy))
         except Exception as e:
             bot.send_message(message.chat.id, e)
 
