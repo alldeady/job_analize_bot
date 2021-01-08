@@ -15,7 +15,7 @@ def clearHtml(raw_html):
     clean_text = re.sub(mr_proper, '', raw_html)
     return clean_text
 
-def getMoreData(url):
+def getVacancyData(url):
     req = requests.get(url)
     data = json.loads(req.content.decode())
     req.close()
@@ -53,7 +53,7 @@ def getData(vacancy, chat_id, bot):
     for page in range(100):
         params = {
             'text': f'NAME:{vacancy}',
-            'area': 1,
+            'area': 1, # 1 is Moscow
             'page': page,
             'per_page': 100
         }
@@ -63,10 +63,10 @@ def getData(vacancy, chat_id, bot):
         sleep(0.2)
 
         for data in item['items']:
-            data_vacancy = getMoreData(data['url'])
+            vacancy_data = getVacancyData(data['url'])
 
             skills = ''
-            for skill in data_vacancy['key_skills']:
+            for skill in vacancy_data['key_skills']:
                 skills += skill['name'] + ', '
 
             salary = 0
@@ -83,19 +83,19 @@ def getData(vacancy, chat_id, bot):
             employer.append(data['employer']['name'])
             alternate_url.append(data['alternate_url'])
             url.append(data['url'])
-            experience.append(data_vacancy['experience']['name'])
+            experience.append(vacancy_data['experience']['name'])
             key_skills.append(skills[:-2])
-            description.append(clearHtml(data_vacancy['description']))
+            description.append(clearHtml(vacancy_data['description']))
             requirement.append(clearHtml(str(data['snippet']['requirement'])))
             responsibility.append(clearHtml(str(data['snippet']['responsibility'])))
 
-        count_vac = len(salaries)
-        sendMessage(f'Вакансий собрано: {count_vac}', chat_id, bot)
+        count_vacancy = len(salaries)
+        sendMessage(f'Вакансий собрано: {count_vacancy}', chat_id, bot)
 
         if (item['pages'] - page) <= 1:
             break
 
-    if count_vac == 0:
+    if count_vacancy == 0:
         return # do raise exception
 
     df = pd.DataFrame({

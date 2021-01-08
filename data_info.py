@@ -13,7 +13,7 @@ def getDF(command):
 
     return df
 
-def getTableNames():
+def getTablesNames():
     command = """
             SELECT * FROM information_schema.tables
             WHERE table_schema = 'public'
