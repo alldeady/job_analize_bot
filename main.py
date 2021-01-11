@@ -67,7 +67,6 @@ def ans(message):
                 bot.edit_message_text(text, message.message.chat.id, message.message.id,
                                     reply_markup=vacanciesKeyboard(str(num) + '_' + msg[1]),
                                     disable_web_page_preview=True)
-
             elif msg[2] == 'first':
                 text = info.getVacancies(msg[1])
                 bot.edit_message_text(text, message.message.chat.id, message.message.id,
@@ -194,7 +193,6 @@ def parser(message):
             photo.close()
             if os.path.isfile(res[0]):
                 os.remove(res[0])
-
             text = f'Самые популярные навыки в {res[2]} вакансиях по запросу ' \
                     f'<code>{vacancy}</code>: <b>{res[1][0]}, {res[1][1]}, {res[1][2]}</b>'
             bot.send_message(message.chat.id, text,
@@ -212,7 +210,6 @@ def parser(message):
             photo.close()
             if os.path.isfile(res[0]):
                 os.remove(res[0])
-
             text = f'На основе {res[1]} вакансий по запросу <code>{vacancy}</code>'
             bot.send_message(message.chat.id, text,
                              reply_markup=commandsKeyboard(vacancy))

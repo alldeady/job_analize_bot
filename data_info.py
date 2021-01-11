@@ -3,6 +3,7 @@ from sqlalchemy import engine as sql
 
 from config import DB
 
+
 def getDF(command):
     eng = sql.create_engine(DB)
     conn = eng.connect()
@@ -11,6 +12,7 @@ def getDF(command):
     conn.close()
 
     return df
+
 
 def getTablesNames():
     command = """
@@ -26,6 +28,7 @@ def getTablesNames():
 
     return names
 
+
 def getCSV(command):
     df = getDF(command)
 
@@ -33,6 +36,7 @@ def getCSV(command):
     df.to_csv(file_name, encoding='utf-8', index=False)
 
     return file_name
+
 
 def getVacancies(db_name, start=0, end=5):
     df = getDF(f'select * from public."{db_name}"')

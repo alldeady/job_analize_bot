@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from data_info import getDF
 
+
 def experienceRate(vacancy):
     df = getDF(f'select experience from public."{vacancy}"')
 
@@ -35,6 +36,7 @@ def experienceRate(vacancy):
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
 
     return res
+
 
 def averageSalary(vacancy):
     df = getDF(f'select salaries, experience from public."{vacancy}"')
@@ -90,6 +92,7 @@ def averageSalary(vacancy):
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
 
     return res
+
 
 def headSkills(vacancy):
     df = getDF(f'select key_skills from public."{vacancy}"')

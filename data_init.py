@@ -12,6 +12,7 @@ def clearHtml(raw_html):
     clean_text = re.sub(mr_proper, '', raw_html)
     return clean_text
 
+
 def getVacancyData(url):
     req = requests.get(url)
     data = json.loads(req.content.decode())
@@ -19,12 +20,14 @@ def getVacancyData(url):
     #sleep(0.2)
     return data
 
+
 def toSQL(df, table_name, if_exists='replace'):
     eng = sql.create_engine(DB)
     conn = eng.connect()
 
     df.to_sql(table_name, conn, schema='public', if_exists=if_exists, index=False)
     conn.close()
+
 
 def updateStatistics(chat_id, first_name, request):
     df = pd.DataFrame({
@@ -35,6 +38,7 @@ def updateStatistics(chat_id, first_name, request):
     }, index=[0])
     toSQL(df, 'statistics', if_exists='append')
 
+
 def updateErrors(chat_id, first_name, request, e):
     df = pd.DataFrame({
         'chat_id': chat_id,
@@ -44,6 +48,7 @@ def updateErrors(chat_id, first_name, request, e):
         'error' : str(e)
     }, index=[0])
     toSQL(df, 'errors', if_exists='append')
+
 
 def getData(vacancy, message, bot):
     name = []
