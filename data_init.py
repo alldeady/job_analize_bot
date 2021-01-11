@@ -99,7 +99,7 @@ def getData(vacancy, message, bot):
         count_vacancy = len(salaries)
         bot.edit_message_text(f'Вакансий собрано: {count_vacancy}', message.chat.id, message.id + 1)
 
-        if (item['pages'] - page) <= 1:
+        if (item['pages'] - page) <= 1: # brake if last page
             break
 
     if count_vacancy == 0:

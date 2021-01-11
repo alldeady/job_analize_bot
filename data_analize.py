@@ -19,6 +19,7 @@ def experienceRate(vacancy):
         elif exp == labels[3]:
             count[3] += 1
 
+    # del item if no data in label
     i = 0
     while i != len(count):
         if count[i] == 0:
@@ -39,26 +40,27 @@ def averageSalary(vacancy):
     df = getDF(f'select salaries, experience from public."{vacancy}"')
     summ = [0, 0, 0, 0]
     n = [0, 0, 0, 0]
-    exp = ['Нет опыта', 'От 1 года до 3 лет', 'От 3 до 6 лет', 'Более 6 лет']
+    labels = ['Нет опыта', 'От 1 года до 3 лет', 'От 3 до 6 лет', 'Более 6 лет']
 
     for i in range(len(df)):
-        if df['experience'][i] == exp[0]:
+        if df['experience'][i] == labels[0]:
             if df['salaries'][i] > 0 :
                 summ[0] += df['salaries'][i]
                 n[0] += 1
-        elif df['experience'][i] == exp[1]:
+        elif df['experience'][i] == labels[1]:
             if df['salaries'][i] > 0:
                 summ[1] += df['salaries'][i]
                 n[1] += 1
-        elif df['experience'][i] == exp[2]:
+        elif df['experience'][i] == labels[2]:
             if df['salaries'][i] > 0:
                 summ[2] += df['salaries'][i]
                 n[2] += 1
-        elif df['experience'][i] == exp[3]:
+        elif df['experience'][i] == labels[3]:
             if df['salaries'][i] > 0:
                 summ[3] += df['salaries'][i]
                 n[3] += 1
 
+    # del item if no data in label
     i = 0
     av_n = 0
     av_summ = 0
@@ -66,7 +68,7 @@ def averageSalary(vacancy):
         if summ[i] == 0:
             del summ[i]
             del n[i]
-            del exp[i]
+            del labels[i]
         else:
             av_n += n[i]
             av_summ += summ[i]
@@ -83,7 +85,7 @@ def averageSalary(vacancy):
         return res
 
     fig, ax = plt.subplots()
-    ax.plot(exp, summ)
+    ax.plot(labels, summ)
     plt.ylabel("Зарпалата в рублях")
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
 
