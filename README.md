@@ -1,4 +1,4 @@
-### Telegram bot for search and analysis job [@job_analize_bot](t.me/job_analize_bot)
+### Telegram bot for search and analysis job [@job_analize_bot](https://t.me/job_analize_bot)
 
 ### Bot abilities
 * Bot can take a list of vacancies from hh.ru and write it to data base
