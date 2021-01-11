@@ -12,7 +12,7 @@ import data_info as info
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) # Outputs debug messages to console.
 
-bot = telebot.TeleBot(TOKEN, parse_mode='MARKDOWN')
+bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
 
 def commandsKeyboard(vacancy):
@@ -21,30 +21,80 @@ def commandsKeyboard(vacancy):
                telebot.types.KeyboardButton(f'Зарплата {vacancy}'),
                telebot.types.KeyboardButton(f'Навыки {vacancy}'),
                telebot.types.KeyboardButton(f'Опыт {vacancy}'),
-               telebot.types.KeyboardButton(f'Скачать {vacancy}'))
+               telebot.types.KeyboardButton(f'Скачать {vacancy}'),
+               telebot.types.KeyboardButton(f'/db'))
     return markup
+
+def tablesKeyboard(names):
+    markup = telebot.types.InlineKeyboardMarkup()
+
+    for name in names:
+        markup.add(telebot.types.InlineKeyboardButton(name, callback_data=name))
+    return markup
+
+def vacanciesKeyboard(vacancy):
+    markup = telebot.types.InlineKeyboardMarkup()
+
+    if int(vacancy.split('_')[0]) > 5:
+        markup.add(telebot.types.InlineKeyboardButton('В начало', callback_data=f'{vacancy}_first'),
+                    telebot.types.InlineKeyboardButton('Вперёд', callback_data=f'{vacancy}_next'))
+    else:
+        markup.add(telebot.types.InlineKeyboardButton('Вперёд', callback_data=f'{vacancy}_next'))
+    return markup
+
+@bot.callback_query_handler(func=lambda message: True)
+def ans(message):
+    if message.data in info.getTablesNames():
+        bot.send_message(message.message.chat.id,
+                f'Какую информацию по вакансии <code>{message.data}</code> хочешь получить?',
+                reply_markup=commandsKeyboard(message.data))
+    else:
+        try:
+            #bot.send_message(message.message.chat.id, message.data)
+            msg = message.data.split('_')
+            if msg[2] == 'next':
+                text = info.getVacancies(msg[1], int(msg[0]), int(msg[0]) + 5)
+
+                count = 3
+                while text[count] != '.':
+                    count += 1
+                num = int(text[3:count]) + 4
+
+                bot.edit_message_text(text, message.message.chat.id, message.message.id,
+                                    reply_markup=vacanciesKeyboard(str(num) + '_' + msg[1]),
+                                    disable_web_page_preview=True)
+
+            elif msg[2] == 'first':
+                text = info.getVacancies(msg[1])
+                bot.edit_message_text(text, message.message.chat.id, message.message.id,
+                                    reply_markup=vacanciesKeyboard(str(5) + '_' + msg[1]),
+                                    disable_web_page_preview=True)
+        except Exception as e:
+            init.updateErrors(message.message.chat.id, message.message.chat.first_name, message.data, e)
 
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    bot.send_message(message.chat.id, 'Привет! Смотри, что я умею /help')
+    init.updateStatistics(message.chat.id, message.chat.first_name, 'start')
+    bot.send_message(message.chat.id, 'Привет! Смотри, что я умею /help\n' \
+        ' Используй /db, чтобы посмотреть уже скачанные вакансии')
 
 
 @bot.message_handler(commands=['help'])
 def help(message):
     init.updateStatistics(message.chat.id, message.chat.first_name, 'help')
 
-    text = '*Я могу скачивать вакансии с hh.ru, а затем анализировать их*\n\n' \
-        '*Пример запроса:* _зарплата data scientist_ или _зп data scientist_\n\n' \
-        'Скачать или обновить вакансии в базе данных: _вакансия, в, v <название вакансии>_\n' \
+    text = '<b>Я могу скачивать вакансии с hh.ru, а затем анализировать их</b>\n\n' \
+        '<b>Пример запроса:</b> <code>вакансия data scientist</code> или <code>зарплата data scientist</code>\n\n' \
+        'Скачать или обновить вакансии в базе данных: <code>вакансия "название вакансии" </code>\n' \
         'Запросы дело не быстрое, так что придётся недолго подождать или долго, если ищещь джаву\n\n' \
-        'Список вакансий в базе данных: _/db_\n\n' \
+        'Список вакансий в базе данных: /db\n\n' \
         'Для работы следующих команд вакансия должна находиться в базе данных\n' \
-        'Показать вакансии: _показать, п, p <название вакансии>_\n' \
-        'Средняя зарплата: _зарплата, зп, zp <название вакансии>_\n' \
-        'Популярные навыки: _навыки, н, n <название вакансии>_\n' \
-        'Распределение опыта: _опыт, о, o <название вакансии>_\n' \
-        'Скачать таблицу в csv: _скачать, с, c <название вакансии>_\n' \
+        'Показать вакансии: <code>показать "название вакансии"</code>\n' \
+        'Средняя зарплата: <code>зарплата "название вакансии"</code>\n' \
+        'Популярные навыки: <code>навыки "название вакансии"</code>\n' \
+        'Распределение опыта: <code>опыт "название вакансии"</code>\n' \
+        'Скачать таблицу в csv: <code>скачать "название вакансии"</code>\n' \
         '\nP.S.: Пока что ищу только в default city\n' \
         'P.S.s.: Ожидаю добавление поддержки заданий от фиксеров\n'
     bot.send_message(message.chat.id, text)
@@ -55,10 +105,13 @@ def db(message):
     init.updateStatistics(message.chat.id, message.chat.first_name, 'db')
 
     names = info.getTablesNames()
-    if names == '':
-        bot.send_message(message.chat.id, 'Список вакансий пуст. /help')
+    if names:
+        bot.send_message(message.chat.id,
+                'Доступны вакансии по запросам:', reply_markup=tablesKeyboard(names))
+        bot.send_message(message.chat.id,
+                'Чтобы скачать или обновить вакансии напиши: <code>вакансия "название вакансии"</code>')
     else:
-        bot.send_message(message.chat.id, f'Доступны вакансии по запросам:\n{names}')
+        bot.send_message(message.chat.id, 'Список вакансий пуст. /help')
 
 
 @bot.message_handler(content_types=['text'])
@@ -72,12 +125,16 @@ def parser(message):
     if msg[0] == 'вакансия' or msg[0] == 'в' or msg[0] == 'v':
         try:
             bot.send_message(message.chat.id, 'Это может занять некторое время')
-            init.getData(vacancy, message.chat.id, bot)
+            init.getData(vacancy, message, bot)
             bot.send_message(message.chat.id, 'Данные по вакансии доступны к анализу',
                              reply_markup=commandsKeyboard(vacancy))
         except Exception as e:
-            bot.send_message(message.chat.id, 'Что-то пошло не так :с /help')
-            bot.send_message(message.chat.id, e)
+            if str(e) == 'Вакансий по запросу не найдено':
+                bot.send_message(message.chat.id, f'{e}, проверь правильность запроса /help')
+            else:
+                bot.send_message(message.chat.id, 'Что-то пошло не так :с /help')
+                bot.send_message(message.chat.id, e)
+                init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'скачать' or msg[0] == 'с' or msg[0] == 'c':
         try:
@@ -90,20 +147,17 @@ def parser(message):
                 os.remove(doc_name)
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'показать' or msg[0] == 'п' or msg[0] == 'p':
         try:
-
-            #keyboard = telebot.types.InlineKeyboardMarkup()
-            #next = telebot.types.InlineKeyboardButton(text='Вперёд', callback_data='nextVac')
-            #keyboard.add(next)
-
             text = info.getVacancies(vacancy)
-            bot.send_message(message.chat.id, text)
-
-
+            bot.send_message(message.chat.id, text,
+                             reply_markup=vacanciesKeyboard(str(5) + '_' + vacancy),
+                             disable_web_page_preview=True)
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'зарплата' or msg[0] == 'зп'  or msg[0] == 'zp':
         try:
@@ -118,12 +172,13 @@ def parser(message):
                     photo.close()
                     if os.path.isfile(res[0]):
                         os.remove(res[0])
-                text = f'*{res[1]}* - средняя зарплата по запросу {vacancy}\n' \
+                text = f'<b>{res[1]}</b> - средняя зарплата по запросу <code>{vacancy}</code>\n' \
                         f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
                 bot.send_message(message.chat.id, text,
                                 reply_markup=commandsKeyboard(vacancy))
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'навыки' or msg[0] == 'н' or msg[0] == 'n':
         try:
@@ -135,11 +190,12 @@ def parser(message):
                 os.remove(res[0])
 
             text = f'Самые популярные навыки в {res[2]} вакансиях по запросу ' \
-                    f'{vacancy}: *{res[1][0]}, {res[1][1]}, {res[1][2]}*'
+                    f'<code>{vacancy}</code>: <b>{res[1][0]}, {res[1][1]}, {res[1][2]}</b>'
             bot.send_message(message.chat.id, text,
                              reply_markup=commandsKeyboard(vacancy))
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'опыт' or msg[0] == 'о' or msg[0] == 'o':
         try:
@@ -150,11 +206,12 @@ def parser(message):
             if os.path.isfile(res[0]):
                 os.remove(res[0])
 
-            text = f'На основе {res[1]} вакансий по запросу {vacancy}'
+            text = f'На основе {res[1]} вакансий по запросу <code>{vacancy}</code>'
             bot.send_message(message.chat.id, text,
                              reply_markup=commandsKeyboard(vacancy))
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     elif msg[0] == 'sql':
         try:
@@ -166,6 +223,7 @@ def parser(message):
                 os.remove(doc_name)
         except Exception as e:
             bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.first_name, message.text, e)
 
     else:
         bot.send_message(message.chat.id, 'Где-то закралась ошибка! /help')

@@ -19,10 +19,10 @@ def getTablesNames():
             """
     df = getDF(command)
 
-    names = ''
+    names = []
     for table_name in df['table_name']:
-        if table_name != 'statistics':
-            names += table_name + '\n'
+        if table_name != 'statistics' and table_name != 'errors':
+            names.append(table_name)
 
     return names
 
@@ -38,7 +38,7 @@ def getVacancies(db_name, start=0, end=5):
     df = getDF(f'select * from public."{db_name}"')
     text = ''
 
-    for i in range(start, end + 1):
+    for i in range(start, end):
         if i >= len(df):
             break
 
@@ -47,13 +47,13 @@ def getVacancies(db_name, start=0, end=5):
         else:
             salary = str(df['salaries'][i])
 
-        text += '*' + df['names'][i] + '*\n' \
-                '_Зарплата:_ ' + salary + '\n' \
-                '_Компания:_ ' + df['employers'][i] + '\n' \
-                '_Опыт:_ ' + df['experience'][i] + '\n' \
-                '_Навыки:_ ' + df['key_skills'][i] + '\n' \
-                '_Требования:_ ' + df['requirement'][i] + '\n' \
-                '_Обязанности:_ ' + df['responsibility'][i] + '\n' + \
-                df['alternate_urls'][i] + '\n\n'
+        text += '<b>' + str(i + 1) + '. ' + df['names'][i] + '</b>\n' \
+                '<code>Зарплата:</code> ' + salary + '\n' \
+                '<code>Компания:</code> ' + df['employers'][i] + '\n' \
+                '<code>Опыт:</code> ' + df['experience'][i] + '\n' \
+                '<code>Навыки:</code> ' + df['key_skills'][i] + '\n' \
+                '<code>Требования:</code> ' + df['requirement'][i] + '\n' \
+                '<code>Обязанности:</code> ' + df['responsibility'][i] + '\n' + \
+                df['alternate_urls'][i][8::] + '\n\n'
 
     return text

@@ -7,9 +7,6 @@ from time import gmtime, strftime, sleep
 
 from config import DB, UE
 
-def sendMessage(message, chat_id, bot):
-    bot.send_message(chat_id, message)
-
 def clearHtml(raw_html):
     mr_proper = re.compile('<.*?>')
     clean_text = re.sub(mr_proper, '', raw_html)
@@ -19,7 +16,7 @@ def getVacancyData(url):
     req = requests.get(url)
     data = json.loads(req.content.decode())
     req.close()
-    sleep(0.2)
+    #sleep(0.2)
     return data
 
 def toSQL(df, table_name, if_exists='replace'):
@@ -38,7 +35,17 @@ def updateStatistics(chat_id, first_name, request):
     }, index=[0])
     toSQL(df, 'statistics', if_exists='append')
 
-def getData(vacancy, chat_id, bot):
+def updateErrors(chat_id, first_name, request, e):
+    df = pd.DataFrame({
+        'chat_id': chat_id,
+        'first_name': first_name,
+        'time': strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
+        'requests': request,
+        'error' : str(e)
+    }, index=[0])
+    toSQL(df, 'errors', if_exists='append')
+
+def getData(vacancy, message, bot):
     name = []
     salaries = []
     employer = []
@@ -60,7 +67,7 @@ def getData(vacancy, chat_id, bot):
         req = requests.get('https://api.hh.ru/vacancies', params)
         item = json.loads(req.content.decode())
         req.close()
-        sleep(0.2)
+        #sleep(0.2)
 
         for data in item['items']:
             vacancy_data = getVacancyData(data['url'])
@@ -90,13 +97,13 @@ def getData(vacancy, chat_id, bot):
             responsibility.append(clearHtml(str(data['snippet']['responsibility'])))
 
         count_vacancy = len(salaries)
-        sendMessage(f'Вакансий собрано: {count_vacancy}', chat_id, bot)
+        bot.edit_message_text(f'Вакансий собрано: {count_vacancy}', message.chat.id, message.id + 1)
 
         if (item['pages'] - page) <= 1:
             break
 
     if count_vacancy == 0:
-        return # do raise exception
+        raise Exception('Вакансий по запросу не найдено')
 
     df = pd.DataFrame({
         'request': vacancy,
