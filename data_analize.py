@@ -34,7 +34,6 @@ def experienceRate(vacancy):
 
     res = ['graph.png', len(df)]
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
-
     return res
 
 
@@ -78,7 +77,7 @@ def averageSalary(vacancy):
             i += 1
 
     if len(summ) == 0:
-        return 'Зарпалата не указана ни в одной вакансии'
+        raise Exception('Зарпалата не указана ни в одной вакансии')
 
     av_summ //= av_n
     res = ['graph.png', av_summ, av_n, len(df)]
@@ -90,7 +89,6 @@ def averageSalary(vacancy):
     ax.plot(labels, summ)
     plt.ylabel("Зарпалата в рублях")
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
-
     return res
 
 
@@ -118,5 +116,4 @@ def headSkills(vacancy):
     fig.set_figheight(10)
     plt.xlabel("Упоминания")
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
-
     return res

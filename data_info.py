@@ -10,7 +10,6 @@ def getDF(command):
 
     df = pd.read_sql(command, conn)
     conn.close()
-
     return df
 
 
@@ -25,7 +24,6 @@ def getTablesNames():
     for table_name in df['table_name']:
         if table_name != 'statistics' and table_name != 'errors':
             names.append(table_name)
-
     return names
 
 
@@ -34,7 +32,6 @@ def getCSV(command):
 
     file_name ='data_set.csv'
     df.to_csv(file_name, encoding='utf-8', index=False)
-
     return file_name
 
 
@@ -59,5 +56,4 @@ def getVacancies(db_name, start=0, end=5):
                 '<code>Требования:</code> ' + df['requirement'][i] + '\n' \
                 '<code>Обязанности:</code> ' + df['responsibility'][i] + '\n' + \
                 df['alternate_urls'][i][8::] + '\n\n'
-
     return text

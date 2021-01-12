@@ -7,19 +7,6 @@ from time import gmtime, strftime, sleep
 
 from config import DB, UE
 
-def clearHtml(raw_html):
-    mr_proper = re.compile('<.*?>')
-    clean_text = re.sub(mr_proper, '', raw_html)
-    return clean_text
-
-
-def getVacancyData(url):
-    req = requests.get(url)
-    data = json.loads(req.content.decode())
-    req.close()
-    #sleep(0.2)
-    return data
-
 
 def toSQL(df, table_name, if_exists='replace'):
     eng = sql.create_engine(DB)
@@ -32,7 +19,7 @@ def toSQL(df, table_name, if_exists='replace'):
 def updateStatistics(chat_id, first_name, request):
     df = pd.DataFrame({
         'chat_id': chat_id,
-        'first_name': first_name,
+        'first_name': first_name, # fix to nickname after clear db
         'time': strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
         'requests': request
     }, index=[0])
@@ -42,12 +29,26 @@ def updateStatistics(chat_id, first_name, request):
 def updateErrors(chat_id, first_name, request, e):
     df = pd.DataFrame({
         'chat_id': chat_id,
-        'first_name': first_name,
+        'first_name': first_name, # fix to nickname after clear db
         'time': strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
         'requests': request,
         'error' : str(e)
     }, index=[0])
     toSQL(df, 'errors', if_exists='append')
+
+
+def clearHtml(raw_html):
+    mr_proper = re.compile('<.*?>')
+    clean_text = re.sub(mr_proper, '', raw_html)
+    return clean_text
+
+
+def getVacancyData(url):
+    req = requests.get(url)
+    data = json.loads(req.content.decode())
+    req.close()
+    #sleep(0.2)
+    return data
 
 
 def getData(vacancy, message, bot):
@@ -104,7 +105,7 @@ def getData(vacancy, message, bot):
         count_vacancy = len(salaries)
         bot.edit_message_text(f'Вакансий собрано: {count_vacancy}', message.chat.id, message.id + 1)
 
-        if (item['pages'] - page) <= 1: # brake if last page
+        if (item['pages'] - page) <= 1: # break if last page
             break
 
     if count_vacancy == 0:
