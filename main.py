@@ -90,16 +90,15 @@ def callback_answer(message):
 
 
 @bot.message_handler(commands=['start'])
+@init.updateStatistics
 def welcome(message):
-    init.updateStatistics(message.chat.id, message.chat.username, 'start')
     bot.send_message(message.chat.id, 'Привет! Гайд по моему использованию смотри в /help\n',
                         reply_markup=startKeyboard())
 
 
 @bot.message_handler(commands=['help'])
+@init.updateStatistics
 def help(message):
-    init.updateStatistics(message.chat.id, message.chat.username, 'help')
-
     text = '<b>Я могу скачивать вакансии с hh.ru, а затем анализировать их</b>\n\n' \
         'Список вакансий в базе данных: <code>список вакансий</code> или /db\n\n' \
         'Скачать или обновить вакансии в базе данных: <code>вакансия "название вакансии" </code>\n' \
@@ -118,12 +117,12 @@ def help(message):
 
 
 @bot.message_handler(commands=['db'])
+@init.updateStatistics
 def db(message):
-    init.updateStatistics(message.chat.id, message.chat.username, 'db')
-    listVacancy(message)
+    listVac(message)
 
 
-def updateVacancy(message, vacancy: str):
+def updateVac(message, vacancy: str):
     try:
         bot.send_message(message.chat.id, 'Это может занять некторое время')
         init.getData(vacancy, message, bot)
@@ -138,7 +137,7 @@ def updateVacancy(message, vacancy: str):
             init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
-def downloadVacancy(message, vacancy: str):
+def downloadVac(message, vacancy: str):
     try:
         doc_name = info.getCSV(f'select * from public."{vacancy}"')
         with open(doc_name, 'rb') as document:
@@ -150,7 +149,8 @@ def downloadVacancy(message, vacancy: str):
         bot.send_message(message.chat.id, e)
         init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
-def showVacancy(message, vacancy: str):
+
+def showVac(message, vacancy: str):
     try:
         text = info.getVacancies(vacancy)
         bot.send_message(message.chat.id, text,
@@ -161,7 +161,7 @@ def showVacancy(message, vacancy: str):
         init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
-def salaryVacancy(message, vacancy: str):
+def salaryVac(message, vacancy: str):
     try:
         # res = ['file_name', averageSalary, count_vacancies_with_salary, count_vacancies]
         res = analize.averageSalary(vacancy)
@@ -183,7 +183,7 @@ def salaryVacancy(message, vacancy: str):
             init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
-def skillsVacancy(message, vacancy: str):
+def skillsVac(message, vacancy: str):
     try:
         # res = ['file_name', [skills], count_vacancies]
         res = analize.headSkills(vacancy)
@@ -200,7 +200,7 @@ def skillsVacancy(message, vacancy: str):
         init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
-def experienceVacancy(message, vacancy: str):
+def experienceVac(message, vacancy: str):
     try:
         # res = ['file_name', count_vacancies]
         res = analize.experienceRate(vacancy)
@@ -216,7 +216,7 @@ def experienceVacancy(message, vacancy: str):
         init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
-def listVacancy(message, vacancy=None):
+def listVac(message, vacancy=None):
     names = info.getTablesNames()
     if names:
         bot.send_message(message.chat.id,
@@ -242,20 +242,19 @@ def sqlQuery(message, vacancy: str):
 
 
 @bot.message_handler(content_types=['text'])
+@init.updateStatistics
 def parser(message):
-    init.updateStatistics(message.chat.id, message.chat.username, message.text)
-
     msg = message.text.lower().split()
     vacancy = ' '.join(msg[1:])
 
     commands = {
-        'вакансия': updateVacancy,
-        'скачать': downloadVacancy,
-        'показать': showVacancy,
-        'зарплата': salaryVacancy,
-        'навыки': skillsVacancy,
-        'опыт': experienceVacancy,
-        'список': listVacancy,
+        'вакансия': updateVac,
+        'скачать': downloadVac,
+        'показать': showVac,
+        'зарплата': salaryVac,
+        'навыки': skillsVac,
+        'опыт': experienceVac,
+        'список': listVac,
         'sql': sqlQuery
     }
 

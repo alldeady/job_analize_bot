@@ -16,14 +16,18 @@ def toSQL(df, table_name, if_exists='replace'):
     conn.close()
 
 
-def updateStatistics(chat_id, first_name, request):
-    df = pd.DataFrame({
-        'chat_id': chat_id,
-        'first_name': first_name, # fix to nickname after clear db
-        'time': strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
-        'requests': request
-    }, index=[0])
-    toSQL(df, 'statistics', if_exists='append')
+def updateStatistics(func):
+    def wrapper(message, **kwargs):
+        df = pd.DataFrame({
+            'chat_id': message.chat.id,
+            'first_name': message.chat.username, # fix to nickname after clear db
+            'time': strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
+            'requests': message.text
+        }, index=[0])
+        toSQL(df, 'statistics', if_exists='append')
+
+        func(message, **kwargs)
+    return wrapper
 
 
 def updateErrors(chat_id, first_name, request, e):
