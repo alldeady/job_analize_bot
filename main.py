@@ -21,7 +21,7 @@ def startKeyboard():
     return markup
 
 
-def commandsKeyboard(vacancy):
+def commandsKeyboard(vacancy: str):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(telebot.types.KeyboardButton(f'Показать {vacancy}'),
                telebot.types.KeyboardButton(f'Зарплата {vacancy}'),
@@ -32,7 +32,7 @@ def commandsKeyboard(vacancy):
     return markup
 
 
-def tablesKeyboard(names):
+def tablesKeyboard(names: list):
     markup = telebot.types.InlineKeyboardMarkup()
 
     for name in names:
@@ -40,7 +40,7 @@ def tablesKeyboard(names):
     return markup
 
 
-def vacanciesKeyboard(vacancy): # vacancy = ''vacancy_number_on_current_page'_'vacancy_name''
+def vacanciesKeyboard(vacancy: str): # vacancy = ''vacancy_number_on_current_page'_'vacancy_name''
     markup = telebot.types.InlineKeyboardMarkup()
 
     vacancy_number = int(vacancy.split('_')[0])
@@ -120,17 +120,125 @@ def help(message):
 @bot.message_handler(commands=['db'])
 def db(message):
     init.updateStatistics(message.chat.id, message.chat.username, 'db')
+    listVacancy(message)
 
+
+def updateVacancy(message, vacancy: str):
+    try:
+        bot.send_message(message.chat.id, 'Это может занять некторое время')
+        init.getData(vacancy, message, bot)
+        bot.send_message(message.chat.id, 'Данные по вакансии доступны к анализу',
+                        reply_markup=commandsKeyboard(vacancy))
+    except Exception as e:
+        if str(e) == 'Вакансий по запросу не найдено':
+            bot.send_message(message.chat.id, f'{e}, проверь правильность запроса /help')
+        else:
+            bot.send_message(message.chat.id, 'Что-то пошло не так :с /help')
+            bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+
+def downloadVacancy(message, vacancy: str):
+    try:
+        doc_name = info.getCSV(f'select * from public."{vacancy}"')
+        with open(doc_name, 'rb') as document:
+            bot.send_document(message.chat.id, document,
+                        reply_markup=commandsKeyboard(vacancy))
+        if os.path.isfile(doc_name):
+            os.remove(doc_name)
+    except Exception as e:
+        bot.send_message(message.chat.id, e)
+        init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+def showVacancy(message, vacancy: str):
+    try:
+        text = info.getVacancies(vacancy)
+        bot.send_message(message.chat.id, text,
+                        reply_markup=vacanciesKeyboard(str(5) + '_' + vacancy),
+                        disable_web_page_preview=True)
+    except Exception as e:
+        bot.send_message(message.chat.id, e)
+        init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+
+def salaryVacancy(message, vacancy: str):
+    try:
+        # res = ['file_name', averageSalary, count_vacancies_with_salary, count_vacancies]
+        res = analize.averageSalary(vacancy)
+        if res[0] != 'No graph':
+            with open(res[0], 'rb') as photo:
+                bot.send_photo(message.chat.id, photo)
+            if os.path.isfile(res[0]):
+                os.remove(res[0])
+        text = f'<b>{res[1]}</b> - средняя зарплата по запросу <code>{vacancy}</code>\n' \
+                f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
+        bot.send_message(message.chat.id, text,
+                        reply_markup=commandsKeyboard(vacancy))
+    except Exception as e:
+        if str(e) == 'Зарпалата не указана ни в одной вакансии':
+            bot.send_message(message.chat.id, e,
+                            reply_markup=commandsKeyboard(vacancy))
+        else:
+            bot.send_message(message.chat.id, e)
+            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+
+def skillsVacancy(message, vacancy: str):
+    try:
+        # res = ['file_name', [skills], count_vacancies]
+        res = analize.headSkills(vacancy)
+        with open(res[0], 'rb') as photo:
+            bot.send_photo(message.chat.id, photo)
+        if os.path.isfile(res[0]):
+            os.remove(res[0])
+        text = f'Самые популярные навыки в {res[2]} вакансиях по запросу ' \
+                f'<code>{vacancy}</code>: <b>{res[1][0]}, {res[1][1]}, {res[1][2]}</b>'
+        bot.send_message(message.chat.id, text,
+                        reply_markup=commandsKeyboard(vacancy))
+    except Exception as e:
+        bot.send_message(message.chat.id, e)
+        init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+
+def experienceVacancy(message, vacancy: str):
+    try:
+        # res = ['file_name', count_vacancies]
+        res = analize.experienceRate(vacancy)
+        with open(res[0], 'rb') as photo:
+            bot.send_photo(message.chat.id, photo)
+        if os.path.isfile(res[0]):
+            os.remove(res[0])
+        text = f'На основе {res[1]} вакансий по запросу <code>{vacancy}</code>'
+        bot.send_message(message.chat.id, text,
+                        reply_markup=commandsKeyboard(vacancy))
+    except Exception as e:
+        bot.send_message(message.chat.id, e)
+        init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+
+
+def listVacancy(message, vacancy=None):
     names = info.getTablesNames()
     if names:
         bot.send_message(message.chat.id,
                 'Доступны вакансии по запросам:', reply_markup=tablesKeyboard(names))
         bot.send_message(message.chat.id,
-                'Чтобы обновить или скачать новые вакансии напиши: ' \
+                'Чтобы скачать или обновить вакансии напиши: ' \
                 '<code>вакансия "название вакансии"</code>')
     else:
         bot.send_message(message.chat.id, 'Список вакансий пуст \n' \
                 'Чтобы скачать вакансии напиши: <code>вакансия "название вакансии"</code>')
+
+
+def sqlQuery(message, vacancy: str):
+    try:
+        doc_name = info.getCSV(command=vacancy)
+        with open(doc_name, 'rb') as document:
+            bot.send_document(message.chat.id, document)
+        if os.path.isfile(doc_name):
+            os.remove(doc_name)
+    except Exception as e:
+        bot.send_message(message.chat.id, e)
+        init.updateErrors(message.chat.id, message.chat.username, message.text, e)
 
 
 @bot.message_handler(content_types=['text'])
@@ -140,118 +248,19 @@ def parser(message):
     msg = message.text.lower().split()
     vacancy = ' '.join(msg[1:])
 
-    # msg[0] is command == 'full name' or 'short rus' or 'short translit'
-    if msg[0] == 'вакансия' or msg[0] == 'в' or msg[0] == 'v':
-        try:
-            bot.send_message(message.chat.id, 'Это может занять некторое время')
-            init.getData(vacancy, message, bot)
-            bot.send_message(message.chat.id, 'Данные по вакансии доступны к анализу',
-                             reply_markup=commandsKeyboard(vacancy))
-        except Exception as e:
-            if str(e) == 'Вакансий по запросу не найдено':
-                bot.send_message(message.chat.id, f'{e}, проверь правильность запроса /help')
-            else:
-                bot.send_message(message.chat.id, 'Что-то пошло не так :с /help')
-                bot.send_message(message.chat.id, e)
-                init.updateErrors(message.chat.id, message.chat.username, message.text, e)
+    commands = {
+        'вакансия': updateVacancy,
+        'скачать': downloadVacancy,
+        'показать': showVacancy,
+        'зарплата': salaryVacancy,
+        'навыки': skillsVacancy,
+        'опыт': experienceVacancy,
+        'список': listVacancy,
+        'sql': sqlQuery
+    }
 
-    elif msg[0] == 'скачать' or msg[0] == 'с' or msg[0] == 'c':
-        try:
-            doc_name = info.getCSV(f'select * from public."{vacancy}"')
-            with open(doc_name, 'rb') as document:
-                bot.send_document(message.chat.id, document,
-                              reply_markup=commandsKeyboard(vacancy))
-            if os.path.isfile(doc_name):
-                os.remove(doc_name)
-        except Exception as e:
-            bot.send_message(message.chat.id, e)
-            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'показать' or msg[0] == 'п' or msg[0] == 'p':
-        try:
-            text = info.getVacancies(vacancy)
-            bot.send_message(message.chat.id, text,
-                             reply_markup=vacanciesKeyboard(str(5) + '_' + vacancy),
-                             disable_web_page_preview=True)
-        except Exception as e:
-            bot.send_message(message.chat.id, e)
-            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'зарплата' or msg[0] == 'зп'  or msg[0] == 'zp':
-        try:
-            # res = ['file_name', averageSalary, count_vacancies_with_salary, count_vacancies]
-            res = analize.averageSalary(vacancy)
-            if res[0] != 'No graph':
-                with open(res[0], 'rb') as photo:
-                    bot.send_photo(message.chat.id, photo)
-                if os.path.isfile(res[0]):
-                    os.remove(res[0])
-            text = f'<b>{res[1]}</b> - средняя зарплата по запросу <code>{vacancy}</code>\n' \
-                    f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
-            bot.send_message(message.chat.id, text,
-                            reply_markup=commandsKeyboard(vacancy))
-        except Exception as e:
-            if str(e) == 'Зарпалата не указана ни в одной вакансии':
-                bot.send_message(message.chat.id, e,
-                                reply_markup=commandsKeyboard(vacancy))
-            else:
-                bot.send_message(message.chat.id, e)
-                init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'навыки' or msg[0] == 'н' or msg[0] == 'n':
-        try:
-            # res = ['file_name', [skills], count_vacancies]
-            res = analize.headSkills(vacancy)
-            with open(res[0], 'rb') as photo:
-                bot.send_photo(message.chat.id, photo)
-            if os.path.isfile(res[0]):
-                os.remove(res[0])
-            text = f'Самые популярные навыки в {res[2]} вакансиях по запросу ' \
-                    f'<code>{vacancy}</code>: <b>{res[1][0]}, {res[1][1]}, {res[1][2]}</b>'
-            bot.send_message(message.chat.id, text,
-                             reply_markup=commandsKeyboard(vacancy))
-        except Exception as e:
-            bot.send_message(message.chat.id, e)
-            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'опыт' or msg[0] == 'о' or msg[0] == 'o':
-        try:
-            # res = ['file_name', count_vacancies]
-            res = analize.experienceRate(vacancy)
-            with open(res[0], 'rb') as photo:
-                bot.send_photo(message.chat.id, photo)
-            if os.path.isfile(res[0]):
-                os.remove(res[0])
-            text = f'На основе {res[1]} вакансий по запросу <code>{vacancy}</code>'
-            bot.send_message(message.chat.id, text,
-                             reply_markup=commandsKeyboard(vacancy))
-        except Exception as e:
-            bot.send_message(message.chat.id, e)
-            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'sql':
-        try:
-            doc_name = info.getCSV(command=vacancy)
-            with open(doc_name, 'rb') as document:
-                bot.send_document(message.chat.id, document)
-            if os.path.isfile(doc_name):
-                os.remove(doc_name)
-        except Exception as e:
-            bot.send_message(message.chat.id, e)
-            init.updateErrors(message.chat.id, message.chat.username, message.text, e)
-
-    elif msg[0] == 'список':
-        names = info.getTablesNames()
-        if names:
-            bot.send_message(message.chat.id,
-                    'Доступны вакансии по запросам:', reply_markup=tablesKeyboard(names))
-            bot.send_message(message.chat.id,
-                    'Чтобы скачать или обновить вакансии напиши: ' \
-                    '<code>вакансия "название вакансии"</code>')
-        else:
-            bot.send_message(message.chat.id, 'Список вакансий пуст \n' \
-                    'Чтобы скачать вакансии напиши: <code>вакансия "название вакансии"</code>')
-
+    if msg[0] in commands:
+        commands[msg[0]](message, vacancy)
     else:
         bot.send_message(message.chat.id, 'Где-то закралась ошибка! /help')
 
