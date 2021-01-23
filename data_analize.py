@@ -8,7 +8,7 @@ def experienceRate(vacancy) -> tuple:
     df = getDF(f'''
         SELECT experience AS labels,
             COUNT(*) AS count,
-            (SELECT COUNT(*) FROM public."{vacancy}") AS lenght
+            (SELECT COUNT(*) FROM public."{vacancy}") AS length
         FROM public."{vacancy}"
         GROUP BY experience
     ''')
@@ -16,7 +16,7 @@ def experienceRate(vacancy) -> tuple:
     fig, ax = plt.subplots()
     ax.pie(df['count'], labels=df['labels'], autopct='%1.1f%%', pctdistance=0.7, wedgeprops=dict(width=0.5))
 
-    res = ('graph.png', df['lenght'][0])
+    res = ('graph.png', df['length'][0])
     fig.savefig(res[0], dpi=200, bbox_inches='tight')
     return res
 
@@ -26,7 +26,7 @@ def averageSalary(vacancy) -> tuple:
         SELECT experience,
             ROUND(AVG(salaries)) AS salaries,
             COUNT(*) AS count,
-            (SELECT COUNT(*) FROM public."{vacancy}") AS lenght
+            (SELECT COUNT(*) FROM public."{vacancy}") AS length
         FROM public."{vacancy}"
         WHERE salaries <> 0
         GROUP BY experience
@@ -43,10 +43,10 @@ def averageSalary(vacancy) -> tuple:
         raise Exception('Зарпалата не указана ни в одной вакансии')
 
     if len(df) == 1:
-        res = ('No graph', round(sum(df['salaries'])/len(df)), sum(df['count']), df['lenght'][0])
+        res = ('No graph', round(sum(df['salaries'])/len(df)), sum(df['count']), df['length'][0])
         return res
 
-    res = ('graph.png', round(sum(df['salaries'])/len(df)), sum(df['count']), df['lenght'][0])
+    res = ('graph.png', round(sum(df['salaries'])/len(df)), sum(df['count']), df['length'][0])
     fig, ax = plt.subplots()
     ax.plot(df['experience'], df['salaries'])
     plt.ylabel("Зарпалата в рублях")
@@ -57,7 +57,7 @@ def averageSalary(vacancy) -> tuple:
 def headSkills(vacancy) -> tuple:
     df = getDF(f'SELECT key_skills FROM public."{vacancy}"')
 
-    lenght = len(df)
+    length = len(df)
 
     skills = []
     for key_skills in df['key_skills']:
@@ -68,7 +68,7 @@ def headSkills(vacancy) -> tuple:
     df = pd.DataFrame(skills)
     count = df[0].value_counts()
 
-    res = ('graph.png', count.head(3).keys(), lenght)
+    res = ('graph.png', count.head(3).keys(), length)
 
     head = count.head(20)[::-1]
 
