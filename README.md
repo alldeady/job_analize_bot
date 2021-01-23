@@ -4,8 +4,8 @@
 * Bot can take a list of vacancies from hh.ru and write it to data base
 * After that, build several graphs based on the received data
 * And show vacancies, ofc
+* Bot have interactive keyboard
 * You can check all available commands with small guide: ```'/help'```
-* Check all downloaded vacancies: ```'/db'```
 * All commands have same syntax: ```'<command> <vacancy name>'```
 * You can download any vacancy table as .csv file: ```'скачать <vacancy name>'```
 * You can use direct SQL queries of any complexity: ```'sql <sql query>'```, bot will execute it and send .csv
