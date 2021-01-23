@@ -13,7 +13,7 @@ def getDF(command):
     return df
 
 
-def getTablesNames():
+def getTablesNames() -> tuple:
     command = """
             SELECT * FROM information_schema.tables
             WHERE table_schema = 'public'
@@ -24,10 +24,10 @@ def getTablesNames():
     for table_name in df['table_name']:
         if table_name != 'statistics' and table_name != 'errors':
             names.append(table_name)
-    return names
+    return tuple(names)
 
 
-def getCSV(command):
+def getCSV(command) -> str:
     df = getDF(command)
 
     file_name ='data_set.csv'
@@ -35,8 +35,8 @@ def getCSV(command):
     return file_name
 
 
-def getVacancies(db_name, start=0, end=5):
-    df = getDF(f'select * from public."{db_name}"')
+def getVacancies(vacancy, start=0, end=5) -> str:
+    df = getDF(f'SELECT * FROM public."{vacancy}"')
     text = ''
 
     for i in range(start, end):

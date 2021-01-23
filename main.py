@@ -14,6 +14,7 @@ telebot.logger.setLevel(logging.DEBUG) # Outputs debug messages to console
 
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
+
 def startKeyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(telebot.types.KeyboardButton(f'Список вакансий'),
@@ -32,7 +33,7 @@ def commandsKeyboard(vacancy: str):
     return markup
 
 
-def tablesKeyboard(names: list):
+def tablesKeyboard(names: tuple):
     markup = telebot.types.InlineKeyboardMarkup()
 
     for name in names:
@@ -163,7 +164,7 @@ def showVac(message, vacancy: str):
 
 def salaryVac(message, vacancy: str):
     try:
-        # res = ['file_name', averageSalary, count_vacancies_with_salary, count_vacancies]
+        # res = ('file_name', averageSalary, count_vacancies_with_salary, count_vacancies)
         res = analize.averageSalary(vacancy)
         if res[0] != 'No graph':
             with open(res[0], 'rb') as photo:
@@ -171,7 +172,7 @@ def salaryVac(message, vacancy: str):
             if os.path.isfile(res[0]):
                 os.remove(res[0])
         text = f'<b>{res[1]}</b> - средняя зарплата по запросу <code>{vacancy}</code>\n' \
-                f'Из {res[3]} вакансий зарплата указана только в {res[2]}'
+                f'Из {res[3]} вакансий зарплата указана в {res[2]}'
         bot.send_message(message.chat.id, text,
                         reply_markup=commandsKeyboard(vacancy))
     except Exception as e:
@@ -185,7 +186,7 @@ def salaryVac(message, vacancy: str):
 
 def skillsVac(message, vacancy: str):
     try:
-        # res = ['file_name', [skills], count_vacancies]
+        # res = ('file_name', [skills], count_vacancies)
         res = analize.headSkills(vacancy)
         with open(res[0], 'rb') as photo:
             bot.send_photo(message.chat.id, photo)
@@ -202,7 +203,7 @@ def skillsVac(message, vacancy: str):
 
 def experienceVac(message, vacancy: str):
     try:
-        # res = ['file_name', count_vacancies]
+        # res = ('file_name', count_vacancies)
         res = analize.experienceRate(vacancy)
         with open(res[0], 'rb') as photo:
             bot.send_photo(message.chat.id, photo)
@@ -244,9 +245,6 @@ def sqlQuery(message, vacancy: str):
 @bot.message_handler(content_types=['text'])
 @init.updateStatistics
 def parser(message):
-    msg = message.text.lower().split()
-    vacancy = ' '.join(msg[1:])
-
     commands = {
         'вакансия': updateVac,
         'скачать': downloadVac,
@@ -257,6 +255,8 @@ def parser(message):
         'список': listVac,
         'sql': sqlQuery
     }
+    msg = message.text.lower().split()
+    vacancy = ' '.join(msg[1:])
 
     if msg[0] in commands:
         commands[msg[0]](message, vacancy)
